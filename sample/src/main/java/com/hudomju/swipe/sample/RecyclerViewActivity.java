@@ -50,6 +50,7 @@ public class RecyclerViewActivity extends Activity {
                         });
 
         recyclerView.setOnTouchListener(touchListener);
+//        touchListener.setSelectableItemBackgroundOnItemClick(R.id.txt_data);
         // Setting this scroll listener is required to ensure that during ListView scrolling,
         // we don't look for swipes.
         recyclerView.setOnScrollListener((RecyclerView.OnScrollListener) touchListener.makeScrollListener());
@@ -57,6 +58,7 @@ public class RecyclerViewActivity extends Activity {
                 new OnItemClickListener() {
                     @Override
                     public void onItemClick(View view, int position) {
+                        touchListener.setSelectableItemBackgroundOnItemClick(view);
                         if (view.getId() == R.id.txt_delete) {
                             touchListener.processPendingDismisses();
                         } else if (view.getId() == R.id.txt_undo) {
