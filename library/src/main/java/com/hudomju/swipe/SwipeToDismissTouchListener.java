@@ -19,7 +19,10 @@ package com.hudomju.swipe;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
+import android.graphics.Color;
 import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -37,16 +40,16 @@ import com.hudomju.swipe.adapter.ViewAdapter;
  * It is given special treatment because by default it handles touches for its list items...
  * i.e. it's in charge of drawing the pressed state (the list selector), handling list item
  * clicks, etc.
- *
+ * <p/>
  * <p>After creating the listener, the caller should also call
  * {@link android.widget.ListView#setOnScrollListener(android.widget.AbsListView.OnScrollListener)},
  * passing in the scroll listener returned by {@link #makeScrollListener()}. If a scroll listener is
  * already assigned, the caller should still pass scroll changes through to this listener. This will
  * ensure that this {@link SwipeToDismissTouchListener} is paused during list view
  * scrolling.</p>
- *
+ * <p/>
  * <p>Example usage:</p>
- *
+ * <p/>
  * <pre>
  * SwipeDismissRecyclerViewTouchListener touchListener =
  *         new SwipeDismissRecyclerViewTouchListener(
@@ -62,7 +65,7 @@ import com.hudomju.swipe.adapter.ViewAdapter;
  * recyclerView.setOnTouchListener(touchListener);
  * recyclerView.setOnScrollListener(touchListener.makeScrollListener());
  * </pre>
- *
+ * <p/>
  * <p>This class Requires API level 12 or later due to use of {@link
  * android.view.ViewPropertyAnimator}.</p>
  */
@@ -90,6 +93,8 @@ public class SwipeToDismissTouchListener<SomeCollectionView extends ViewAdapter>
     private int mDownPosition;
     private RowContainer mRowContainer;
     private boolean mPaused;
+    private View view;
+    private int basicColor;
 
     public class RowContainer {
 
@@ -182,6 +187,24 @@ public class SwipeToDismissTouchListener<SomeCollectionView extends ViewAdapter>
         });
     }
 
+    public void setSelectableItemBackgroundOnItemClick(final View clickedView) {
+        view = clickedView;
+        if (clickedView != null) {
+            ColorDrawable rowColor = (ColorDrawable) clickedView.getBackground();
+            if (rowColor != null) {
+                basicColor = rowColor.getColor();
+                clickedView.setBackgroundColor(Color.parseColor("#FF87CEFA"));
+                final Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        clickedView.setBackgroundColor(basicColor);
+                    }
+                }, 200);
+            }
+        }
+    }
+
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
         if (mViewWidth < 2) {
@@ -208,7 +231,7 @@ public class SwipeToDismissTouchListener<SomeCollectionView extends ViewAdapter>
                     child = mRecyclerView.getChildAt(i);
                     child.getHitRect(rect);
                     if (rect.contains(x, y)) {
-                        assert(child instanceof ViewGroup &&
+                        assert (child instanceof ViewGroup &&
                                 ((ViewGroup) child).getChildCount() == 2) :
                                 "Each child needs to extend from ViewGroup and have two children";
 
@@ -236,6 +259,7 @@ public class SwipeToDismissTouchListener<SomeCollectionView extends ViewAdapter>
             }
 
             case MotionEvent.ACTION_CANCEL: {
+
                 if (mVelocityTracker == null) {
                     break;
                 }
@@ -260,6 +284,7 @@ public class SwipeToDismissTouchListener<SomeCollectionView extends ViewAdapter>
             }
 
             case MotionEvent.ACTION_UP: {
+
                 if (mVelocityTracker == null) {
                     break;
                 }
@@ -316,6 +341,7 @@ public class SwipeToDismissTouchListener<SomeCollectionView extends ViewAdapter>
             }
 
             case MotionEvent.ACTION_MOVE: {
+
                 if (mVelocityTracker == null || mPaused) {
                     break;
                 }
@@ -355,7 +381,7 @@ public class SwipeToDismissTouchListener<SomeCollectionView extends ViewAdapter>
 
         public PendingDismissData(int position, RowContainer rowContainer) {
             this.position = position;
-            this.rowContainer= rowContainer;
+            this.rowContainer = rowContainer;
         }
 
         @Override
@@ -371,7 +397,7 @@ public class SwipeToDismissTouchListener<SomeCollectionView extends ViewAdapter>
         // frame; in the future we may want to do something smarter and more performant.
         if (mPendingDismiss != null) {
             boolean dismissingDifferentRow = mPendingDismiss.position != dismissPosition;
-            int newPosition = mPendingDismiss.position < dismissPosition ? dismissPosition-1 : dismissPosition;
+            int newPosition = mPendingDismiss.position < dismissPosition ? dismissPosition - 1 : dismissPosition;
             processPendingDismisses();
             if (dismissingDifferentRow) {
                 addPendingDismiss(dismissView, newPosition);
@@ -390,6 +416,7 @@ public class SwipeToDismissTouchListener<SomeCollectionView extends ViewAdapter>
     /**
      * If a view was dismissed and the undo container is showing it will proceed with the final
      * dismiss of the item.
+     *
      * @return whether there were any pending rows to be dismissed.
      */
     public boolean processPendingDismisses() {
@@ -400,6 +427,7 @@ public class SwipeToDismissTouchListener<SomeCollectionView extends ViewAdapter>
 
     /**
      * Whether a row has been dismissed and is waiting for confirmation
+     *
      * @return whether there are any pending rows to be dismissed.
      */
     public boolean existPendingDismisses() {
@@ -409,6 +437,7 @@ public class SwipeToDismissTouchListener<SomeCollectionView extends ViewAdapter>
     /**
      * If a view was dismissed and the undo container is showing it will undo and make the data
      * container reappear.
+     *
      * @return whether there were any pending rows to be dismissed.
      */
     public boolean undoPendingDismiss() {
